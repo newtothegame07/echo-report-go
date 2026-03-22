@@ -10,28 +10,52 @@ import { Recycle, User, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const [fullName, setFullName] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, signup } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (role: "user" | "admin") => {
-    if (!username || !password) {
+  const handleAuth = async () => {
+    if (!email || !password) {
       toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
       return;
     }
-    const success = login(username, password, role);
-    if (success) {
-      toast({ title: "Welcome!", description: `Logged in as ${role}` });
-      navigate(role === "admin" ? "/admin" : "/");
+    if (isSignup && !fullName) {
+      toast({ title: "Error", description: "Please enter your full name", variant: "destructive" });
+      return;
     }
+
+    setIsLoading(true);
+
+    if (isSignup) {
+      const result = await signup(email, password, fullName);
+      if (result.success) {
+        toast({ title: "Account Created!", description: "Please check your email to verify your account, or login directly." });
+        setIsSignup(false);
+      } else {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+      }
+    } else {
+      const result = await login(email, password);
+      if (result.success) {
+        toast({ title: "Welcome!", description: "Logged in successfully" });
+        navigate("/");
+      } else {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+      }
+    }
+
+    setIsLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2 mb-8">
+        <div className="flex items-center justify-center gap-2 mb-8 cursor-pointer" onClick={() => navigate("/")}>
           <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
             <Recycle className="h-7 w-7 text-primary-foreground" />
           </div>
@@ -40,52 +64,58 @@ const Login = () => {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Sign In</CardTitle>
-            <CardDescription>Choose your role to continue</CardDescription>
+            <CardTitle className="text-xl">{isSignup ? "Create Account" : "Sign In"}</CardTitle>
+            <CardDescription>
+              {isSignup ? "Register as a citizen to report waste issues" : "Login to your account"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="user" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="user" className="flex items-center gap-2">
-                  <User className="h-4 w-4" /> Citizen
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4" /> Admin
-                </TabsTrigger>
-              </TabsList>
-
-              {(["user", "admin"] as const).map((role) => (
-                <TabsContent key={role} value={role}>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`${role}-username`}>Username</Label>
-                      <Input
-                        id={`${role}-username`}
-                        placeholder={role === "admin" ? "Admin username" : "Your username"}
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`${role}-password`}>Password</Label>
-                      <Input
-                        id={`${role}-password`}
-                        type="password"
-                        placeholder="Enter password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </div>
-                    <Button className="w-full" onClick={() => handleLogin(role)}>
-                      {role === "admin" ? "Login as Admin" : "Login as Citizen"}
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground">
-                      Demo: use any username & password
-                    </p>
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+            <div className="space-y-4">
+              {isSignup && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="Your Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Your Email Address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+                />
+              </div>
+              <Button className="w-full" onClick={handleAuth} disabled={isLoading}>
+                {isLoading ? "Please wait..." : isSignup ? "Sign Up" : "Sign In"}
+              </Button>
+              <p className="text-sm text-center text-muted-foreground">
+                {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
+                <button
+                  className="text-primary hover:underline font-medium"
+                  onClick={() => setIsSignup(!isSignup)}
+                >
+                  {isSignup ? "Sign In" : "Sign Up"}
+                </button>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

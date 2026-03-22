@@ -5,38 +5,43 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TrackComplaint = () => {
   const [complaintId, setComplaintId] = useState("");
   const [trackingData, setTrackingData] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!complaintId.trim()) return;
+    
     setIsSearching(true);
+    setNotFound(false);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const { data, error } = await supabase
+      .from("waste_reports")
+      .select("*")
+      .eq("report_id", complaintId.trim())
+      .maybeSingle();
 
-    // Mock data
-    setTrackingData({
-      id: complaintId || "WM2024-1234",
-      status: "in-progress",
-      location: "123 Main Street, District",
-      type: "Household Waste",
-      submittedDate: "2024-03-15",
-      assignedTo: "Team A - Zone 3",
-      estimatedCompletion: "2024-03-17",
-    });
+    if (data) {
+      setTrackingData(data);
+    } else {
+      setTrackingData(null);
+      setNotFound(true);
+    }
 
     setIsSearching(false);
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
+      case "Resolved":
         return <CheckCircle2 className="h-5 w-5" />;
-      case "in-progress":
+      case "In Progress":
+      case "Assigned":
         return <Clock className="h-5 w-5" />;
       default:
         return <AlertCircle className="h-5 w-5" />;
@@ -45,9 +50,10 @@ const TrackComplaint = () => {
 
   const getStatusVariant = (status: string): "default" | "secondary" | "outline" => {
     switch (status) {
-      case "completed":
+      case "Resolved":
         return "default";
-      case "in-progress":
+      case "In Progress":
+      case "Assigned":
         return "secondary";
       default:
         return "outline";
@@ -76,7 +82,7 @@ const TrackComplaint = () => {
                   <Label htmlFor="complaint-id">Complaint ID</Label>
                   <Input
                     id="complaint-id"
-                    placeholder="WM2024-1234"
+                    placeholder="WM-2026-1234"
                     value={complaintId}
                     onChange={(e) => setComplaintId(e.target.value)}
                   />
@@ -90,16 +96,22 @@ const TrackComplaint = () => {
               </div>
             </form>
 
+            {notFound && (
+              <div className="mt-6 text-center text-muted-foreground">
+                No complaint found with that ID. Please check and try again.
+              </div>
+            )}
+
             {trackingData && (
               <div className="mt-8 space-y-4 animate-fade-in">
                 <div className="flex items-center justify-between pb-4 border-b">
                   <div>
-                    <h3 className="font-semibold text-lg">Complaint #{trackingData.id}</h3>
-                    <p className="text-sm text-muted-foreground">{trackingData.type}</p>
+                    <h3 className="font-semibold text-lg">Complaint #{trackingData.report_id}</h3>
+                    <p className="text-sm text-muted-foreground">{trackingData.waste_type}</p>
                   </div>
                   <Badge variant={getStatusVariant(trackingData.status)} className="gap-1">
                     {getStatusIcon(trackingData.status)}
-                    {trackingData.status === "in-progress" ? "In Progress" : "Completed"}
+                    {trackingData.status}
                   </Badge>
                 </div>
 
@@ -110,44 +122,24 @@ const TrackComplaint = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Assigned To</p>
-                    <p className="font-medium">{trackingData.assignedTo}</p>
+                    <p className="font-medium">{trackingData.assigned_to || "Not yet assigned"}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Submitted Date</p>
-                    <p className="font-medium">{trackingData.submittedDate}</p>
+                    <p className="font-medium">{new Date(trackingData.created_at).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Est. Completion</p>
-                    <p className="font-medium">{trackingData.estimatedCompletion}</p>
+                    <p className="text-sm text-muted-foreground">Priority</p>
+                    <p className="font-medium">{trackingData.priority}</p>
                   </div>
                 </div>
 
-                <div className="bg-muted rounded-lg p-4 mt-4">
-                  <h4 className="font-semibold mb-2">Progress Timeline</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">Complaint Received</p>
-                        <p className="text-sm text-muted-foreground">March 15, 2024</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">Team Assigned</p>
-                        <p className="text-sm text-muted-foreground">March 15, 2024</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-accent" />
-                      <div>
-                        <p className="font-medium">Collection in Progress</p>
-                        <p className="text-sm text-muted-foreground">Expected by March 17, 2024</p>
-                      </div>
-                    </div>
+                {trackingData.description && (
+                  <div className="bg-muted rounded-lg p-4 mt-4">
+                    <h4 className="font-semibold mb-2">Description</h4>
+                    <p className="text-sm text-muted-foreground">{trackingData.description}</p>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </CardContent>

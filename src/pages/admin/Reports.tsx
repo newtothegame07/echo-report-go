@@ -4,17 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter } from "lucide-react";
-
-const allReports = [
-  { id: "WR-2024-001", reporter: "Rahul Sharma", location: "MG Road, Zone A", type: "Overflowing Bin", status: "Pending", date: "2024-01-15", priority: "High" },
-  { id: "WR-2024-002", reporter: "Priya Patel", location: "Station Road, Zone B", type: "Illegal Dumping", status: "Assigned", date: "2024-01-15", priority: "Critical" },
-  { id: "WR-2024-003", reporter: "Amit Kumar", location: "Park Street, Zone C", type: "Hazardous Waste", status: "Resolved", date: "2024-01-14", priority: "Critical" },
-  { id: "WR-2024-004", reporter: "Sneha Gupta", location: "Main Market, Zone A", type: "Overflowing Bin", status: "Pending", date: "2024-01-14", priority: "Medium" },
-  { id: "WR-2024-005", reporter: "Vikram Singh", location: "Lake View, Zone D", type: "Construction Debris", status: "In Progress", date: "2024-01-13", priority: "High" },
-  { id: "WR-2024-006", reporter: "Meera Nair", location: "Temple Road, Zone B", type: "Street Litter", status: "Resolved", date: "2024-01-13", priority: "Low" },
-  { id: "WR-2024-007", reporter: "Karan Joshi", location: "Industrial Area, Zone E", type: "Hazardous Waste", status: "Assigned", date: "2024-01-12", priority: "Critical" },
-  { id: "WR-2024-008", reporter: "Anita Desai", location: "Riverside, Zone D", type: "Illegal Dumping", status: "Pending", date: "2024-01-12", priority: "High" },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColor: Record<string, string> = {
   Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -33,11 +26,44 @@ const priorityVariant: Record<string, "default" | "destructive" | "secondary" | 
 const Reports = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const filtered = allReports.filter((r) => {
-    const matchSearch = r.id.toLowerCase().includes(search.toLowerCase()) ||
+  const { data: reports = [] } = useQuery({
+    queryKey: ["admin-all-reports"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("waste_reports").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("waste_reports").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-all-reports"] });
+      toast({ title: "Status updated" });
+    },
+  });
+
+  const updatePriority = useMutation({
+    mutationFn: async ({ id, priority }: { id: string; priority: string }) => {
+      const { error } = await supabase.from("waste_reports").update({ priority }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-all-reports"] });
+      toast({ title: "Priority updated" });
+    },
+  });
+
+  const filtered = reports.filter((r) => {
+    const matchSearch = r.report_id.toLowerCase().includes(search.toLowerCase()) ||
       r.location.toLowerCase().includes(search.toLowerCase()) ||
-      r.reporter.toLowerCase().includes(search.toLowerCase());
+      r.reporter_name.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "All" || r.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -78,28 +104,45 @@ const Reports = () => {
                   <th className="text-left py-3 px-2 font-medium">Priority</th>
                   <th className="text-left py-3 px-2 font-medium">Status</th>
                   <th className="text-left py-3 px-2 font-medium">Date</th>
-                  <th className="text-left py-3 px-2 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="py-3 px-2 font-mono text-xs">{r.id}</td>
-                    <td className="py-3 px-2">{r.reporter}</td>
+                    <td className="py-3 px-2 font-mono text-xs">{r.report_id}</td>
+                    <td className="py-3 px-2">{r.reporter_name}</td>
                     <td className="py-3 px-2">{r.location}</td>
-                    <td className="py-3 px-2">{r.type}</td>
+                    <td className="py-3 px-2">{r.waste_type}</td>
                     <td className="py-3 px-2">
-                      <Badge variant={priorityVariant[r.priority]}>{r.priority}</Badge>
+                      <Select defaultValue={r.priority} onValueChange={(v) => updatePriority.mutate({ id: r.id, priority: v })}>
+                        <SelectTrigger className="w-24 h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Low", "Medium", "High", "Critical"].map((p) => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="py-3 px-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[r.status]}`}>{r.status}</span>
+                      <Select defaultValue={r.status} onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v })}>
+                        <SelectTrigger className="w-28 h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Pending", "Assigned", "In Progress", "Resolved"].map((s) => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
-                    <td className="py-3 px-2 text-muted-foreground">{r.date}</td>
-                    <td className="py-3 px-2">
-                      <Button size="sm" variant="outline">View</Button>
-                    </td>
+                    <td className="py-3 px-2 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">No reports found</td></tr>
+                )}
               </tbody>
             </table>
           </div>
