@@ -60,7 +60,7 @@ const ReportForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john@example.com" required />
+                <Input id="email" type="email" placeholder="Your Email Address" required />
               </div>
 
               <div className="space-y-2">
