@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, role, logout } = useAuth();
+  const navigate = useNavigate();
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
