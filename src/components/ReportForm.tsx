@@ -50,17 +50,17 @@ const ReportForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="John Doe" required />
+                  <Input id="name" placeholder="Your Name" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="+1 234 567 8900" required />
+                  <Input id="phone" type="tel" placeholder="Your Phone Number" required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john@example.com" required />
+                <Input id="email" type="email" placeholder="Your Email Address" required />
               </div>
 
               <div className="space-y-2">
