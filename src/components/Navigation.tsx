@@ -55,6 +55,22 @@ const Navigation = () => {
             <Button size="sm" onClick={() => scrollToSection("report")}>
               Report Waste
             </Button>
+            {isAuthenticated ? (
+              <>
+                {role === "admin" && (
+                  <Button size="sm" variant="outline" onClick={() => navigate("/admin")}>
+                    Admin Panel
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => { logout(); navigate("/"); }}>
+                  <LogOut className="h-4 w-4 mr-1" /> Logout
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => navigate("/login")}>
+                <LogIn className="h-4 w-4 mr-1" /> Login
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
