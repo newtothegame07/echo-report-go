@@ -109,10 +109,26 @@ const Navigation = () => {
             >
               How It Works
             </button>
-            <div className="px-4 pt-2">
+            <div className="px-4 pt-2 space-y-2">
               <Button className="w-full" onClick={() => scrollToSection("report")}>
                 Report Waste
               </Button>
+              {isAuthenticated ? (
+                <>
+                  {role === "admin" && (
+                    <Button className="w-full" variant="outline" onClick={() => { navigate("/admin"); setIsOpen(false); }}>
+                      Admin Panel
+                    </Button>
+                  )}
+                  <Button className="w-full" variant="ghost" onClick={() => { logout(); navigate("/"); setIsOpen(false); }}>
+                    <LogOut className="h-4 w-4 mr-1" /> Logout
+                  </Button>
+                </>
+              ) : (
+                <Button className="w-full" variant="outline" onClick={() => { navigate("/login"); setIsOpen(false); }}>
+                  <LogIn className="h-4 w-4 mr-1" /> Login
+                </Button>
+              )}
             </div>
           </div>
         )}
