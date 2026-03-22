@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Recycle, Menu } from "lucide-react";
+import { Recycle, Menu, LogIn, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, role, logout } = useAuth();
+  const navigate = useNavigate();
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -51,6 +55,22 @@ const Navigation = () => {
             <Button size="sm" onClick={() => scrollToSection("report")}>
               Report Waste
             </Button>
+            {isAuthenticated ? (
+              <>
+                {role === "admin" && (
+                  <Button size="sm" variant="outline" onClick={() => navigate("/admin")}>
+                    Admin Panel
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => { logout(); navigate("/"); }}>
+                  <LogOut className="h-4 w-4 mr-1" /> Logout
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => navigate("/login")}>
+                <LogIn className="h-4 w-4 mr-1" /> Login
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -89,10 +109,26 @@ const Navigation = () => {
             >
               How It Works
             </button>
-            <div className="px-4 pt-2">
+            <div className="px-4 pt-2 space-y-2">
               <Button className="w-full" onClick={() => scrollToSection("report")}>
                 Report Waste
               </Button>
+              {isAuthenticated ? (
+                <>
+                  {role === "admin" && (
+                    <Button className="w-full" variant="outline" onClick={() => { navigate("/admin"); setIsOpen(false); }}>
+                      Admin Panel
+                    </Button>
+                  )}
+                  <Button className="w-full" variant="ghost" onClick={() => { logout(); navigate("/"); setIsOpen(false); }}>
+                    <LogOut className="h-4 w-4 mr-1" /> Logout
+                  </Button>
+                </>
+              ) : (
+                <Button className="w-full" variant="outline" onClick={() => { navigate("/login"); setIsOpen(false); }}>
+                  <LogIn className="h-4 w-4 mr-1" /> Login
+                </Button>
+              )}
             </div>
           </div>
         )}
