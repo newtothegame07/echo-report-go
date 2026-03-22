@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Recycle, Menu } from "lucide-react";
+import { Recycle, Menu, LogIn, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
