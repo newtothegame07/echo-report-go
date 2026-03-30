@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Recycle, User, ShieldCheck } from "lucide-react";
+import { Recycle, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
@@ -34,8 +33,8 @@ const Login = () => {
     if (isSignup) {
       const result = await signup(email, password, fullName);
       if (result.success) {
-        toast({ title: "Account Created!", description: "Please check your email to verify your account, or login directly." });
-        setIsSignup(false);
+        toast({ title: "Account Created!", description: "You are now logged in." });
+        navigate("/");
       } else {
         toast({ title: "Error", description: result.error, variant: "destructive" });
       }
@@ -66,7 +65,9 @@ const Login = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-xl">{isSignup ? "Create Account" : "Sign In"}</CardTitle>
             <CardDescription>
-              {isSignup ? "Register as a citizen to report waste issues" : "Login to your account"}
+              {isSignup
+                ? "Register as a citizen to report waste issues"
+                : "Use admin@cleancity.com / admin123 for admin, or user@cleancity.com / user123 for citizen"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -74,44 +75,24 @@ const Login = () => {
               {isSignup && (
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    placeholder="Your Name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
+                  <Input id="fullName" placeholder="Your Name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 </div>
               )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Your Email Address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <Input id="email" type="email" placeholder="Your Email Address" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-                />
+                <Input id="password" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAuth()} />
               </div>
               <Button className="w-full" onClick={handleAuth} disabled={isLoading}>
+                <LogIn className="h-4 w-4 mr-2" />
                 {isLoading ? "Please wait..." : isSignup ? "Sign Up" : "Sign In"}
               </Button>
               <p className="text-sm text-center text-muted-foreground">
                 {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
-                <button
-                  className="text-primary hover:underline font-medium"
-                  onClick={() => setIsSignup(!isSignup)}
-                >
+                <button className="text-primary hover:underline font-medium" onClick={() => setIsSignup(!isSignup)}>
                   {isSignup ? "Sign In" : "Sign Up"}
                 </button>
               </p>

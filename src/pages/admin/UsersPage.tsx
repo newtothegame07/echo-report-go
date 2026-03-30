@@ -1,26 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, UserCheck, Users } from "lucide-react";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
+const mockUsers = [
+  { id: "1", full_name: "Rahul Sharma", email: "rahul@example.com", phone: "9876543210", created_at: "2026-01-15" },
+  { id: "2", full_name: "Priya Patel", email: "priya@example.com", phone: "9876543211", created_at: "2026-02-10" },
+  { id: "3", full_name: "Amit Kumar", email: "amit@example.com", phone: "9876543212", created_at: "2026-02-20" },
+  { id: "4", full_name: "Sneha Gupta", email: "sneha@example.com", phone: "9876543213", created_at: "2026-03-05" },
+  { id: "5", full_name: "Vikram Singh", email: "vikram@example.com", phone: "9876543214", created_at: "2026-03-18" },
+];
 
 const UsersPage = () => {
   const [search, setSearch] = useState("");
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const filtered = users.filter((u) =>
-    (u.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
-    (u.email || "").toLowerCase().includes(search.toLowerCase())
+  const filtered = mockUsers.filter((u) =>
+    u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+    u.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -33,7 +29,7 @@ const UsersPage = () => {
             <div className="flex items-center gap-3">
               <UserCheck className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-2xl font-bold">{mockUsers.length}</p>
                 <p className="text-sm text-muted-foreground">Total Users</p>
               </div>
             </div>
@@ -73,9 +69,9 @@ const UsersPage = () => {
               <tbody>
                 {filtered.map((u) => (
                   <tr key={u.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="py-3 px-2 font-medium">{u.full_name || "—"}</td>
-                    <td className="py-3 px-2 text-muted-foreground">{u.email || "—"}</td>
-                    <td className="py-3 px-2">{u.phone || "—"}</td>
+                    <td className="py-3 px-2 font-medium">{u.full_name}</td>
+                    <td className="py-3 px-2 text-muted-foreground">{u.email}</td>
+                    <td className="py-3 px-2">{u.phone}</td>
                     <td className="py-3 px-2 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}

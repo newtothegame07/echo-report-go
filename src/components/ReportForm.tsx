@@ -5,15 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Upload } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 const ReportForm = () => {
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wasteType, setWasteType] = useState("");
@@ -32,31 +31,19 @@ const ReportForm = () => {
     }
 
     setIsSubmitting(true);
-    const formData = new FormData(e.currentTarget);
 
-    const { data, error } = await supabase.from("waste_reports").insert({
-      reporter_name: formData.get("name") as string,
-      reporter_email: formData.get("email") as string,
-      reporter_phone: formData.get("phone") as string,
-      location: formData.get("location") as string,
-      waste_type: wasteType,
-      description: formData.get("description") as string,
-      user_id: user?.id,
-      report_id: "temp", // trigger will override
-    }).select("report_id").single();
+    // Mock submission
+    const reportId = `WM-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
 
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
+    setTimeout(() => {
       toast({
         title: "Report Submitted Successfully!",
-        description: `Your complaint ID is #${data.report_id}`,
+        description: `Your complaint ID is #${reportId}`,
       });
       (e.target as HTMLFormElement).reset();
       setWasteType("");
-    }
-
-    setIsSubmitting(false);
+      setIsSubmitting(false);
+    }, 800);
   };
 
   return (
@@ -99,12 +86,7 @@ const ReportForm = () => {
                   <MapPin className="inline h-4 w-4 mr-1" />
                   Location Address
                 </Label>
-                <Input
-                  id="location"
-                  name="location"
-                  placeholder="123 Main Street, District, City"
-                  required
-                />
+                <Input id="location" name="location" placeholder="123 Main Street, District, City" required />
               </div>
 
               <div className="space-y-2">
@@ -126,13 +108,7 @@ const ReportForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  placeholder="Describe the waste issue in detail..."
-                  rows={4}
-                  required
-                />
+                <Textarea id="description" name="description" placeholder="Describe the waste issue in detail..." rows={4} required />
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
