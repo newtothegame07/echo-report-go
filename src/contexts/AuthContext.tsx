@@ -1,6 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type Role = "user" | "admin" | null;
 
@@ -8,95 +6,51 @@ interface AuthContextType {
   isAuthenticated: boolean;
   role: Role;
   username: string;
-  user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
+const MOCK_USERS = [
+  { email: "admin@cleancity.com", password: "admin123", role: "admin" as Role, name: "Admin User" },
+  { email: "user@cleancity.com", password: "user123", role: "user" as Role, name: "Citizen User" },
+];
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState<Role>(null);
   const [username, setUsername] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .maybeSingle();
-    return (data?.role as Role) || "user";
-  };
-
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("user_id", userId)
-      .maybeSingle();
-    return data?.full_name || "";
-  };
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        const [userRole, name] = await Promise.all([
-          fetchRole(session.user.id),
-          fetchProfile(session.user.id),
-        ]);
-        setRole(userRole);
-        setUsername(name);
-      } else {
-        setUser(null);
-        setRole(null);
-        setUsername("");
-      }
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        const [userRole, name] = await Promise.all([
-          fetchRole(session.user.id),
-          fetchProfile(session.user.id),
-        ]);
-        setRole(userRole);
-        setUsername(name);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [loading] = useState(false);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { success: false, error: error.message };
+    const found = MOCK_USERS.find((u) => u.email === email && u.password === password);
+    if (found) {
+      setIsAuthenticated(true);
+      setRole(found.role);
+      setUsername(found.name);
+      return { success: true };
+    }
+    return { success: false, error: "Invalid email or password" };
+  };
+
+  const signup = async (_email: string, _password: string, fullName: string) => {
+    setIsAuthenticated(true);
+    setRole("user");
+    setUsername(fullName);
     return { success: true };
   };
 
-  const signup = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  };
-
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = () => {
+    setIsAuthenticated(false);
+    setRole(null);
+    setUsername("");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, role, username, user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, role, username, loading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

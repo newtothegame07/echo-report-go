@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+
+const initialReports = [
+  { id: "1", report_id: "WM-2026-1234", reporter_name: "Rahul Sharma", location: "123 Main St, Zone A", waste_type: "Household Waste", status: "In Progress", priority: "High", created_at: "2026-03-15" },
+  { id: "2", report_id: "WM-2026-5678", reporter_name: "Priya Patel", location: "45 Industrial Rd, Zone C", waste_type: "Hazardous Waste", status: "Pending", priority: "Critical", created_at: "2026-03-20" },
+  { id: "3", report_id: "WM-2026-9012", reporter_name: "Amit Kumar", location: "78 Oak Avenue, Zone B", waste_type: "Construction Debris", status: "Resolved", priority: "Medium", created_at: "2026-03-10" },
+  { id: "4", report_id: "WM-2026-3456", reporter_name: "Sneha Gupta", location: "12 River Lane, Zone D", waste_type: "Electronic Waste", status: "Assigned", priority: "Low", created_at: "2026-03-22" },
+  { id: "5", report_id: "WM-2026-7890", reporter_name: "Vikram Singh", location: "56 Park Blvd, Zone A", waste_type: "Recyclable Materials", status: "Pending", priority: "Medium", created_at: "2026-03-25" },
+];
 
 const statusColor: Record<string, string> = {
   Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -16,49 +22,16 @@ const statusColor: Record<string, string> = {
   Resolved: "bg-primary/20 text-primary border-primary/30",
 };
 
-const priorityVariant: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-  Critical: "destructive",
-  High: "default",
-  Medium: "secondary",
-  Low: "outline",
-};
-
 const Reports = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [reports, setReports] = useState(initialReports);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: reports = [] } = useQuery({
-    queryKey: ["admin-all-reports"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("waste_reports").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("waste_reports").update({ status }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-all-reports"] });
-      toast({ title: "Status updated" });
-    },
-  });
-
-  const updatePriority = useMutation({
-    mutationFn: async ({ id, priority }: { id: string; priority: string }) => {
-      const { error } = await supabase.from("waste_reports").update({ priority }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-all-reports"] });
-      toast({ title: "Priority updated" });
-    },
-  });
+  const updateField = (id: string, field: string, value: string) => {
+    setReports((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+    toast({ title: `${field.charAt(0).toUpperCase() + field.slice(1)} updated` });
+  };
 
   const filtered = reports.filter((r) => {
     const matchSearch = r.report_id.toLowerCase().includes(search.toLowerCase()) ||
@@ -79,18 +52,14 @@ const Reports = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           {["All", "Pending", "Assigned", "In Progress", "Resolved"].map((s) => (
-            <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s)}>
-              {s}
-            </Button>
+            <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s)}>{s}</Button>
           ))}
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" /> {filtered.length} Reports
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2"><Filter className="h-5 w-5" /> {filtered.length} Reports</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -114,26 +83,18 @@ const Reports = () => {
                     <td className="py-3 px-2">{r.location}</td>
                     <td className="py-3 px-2">{r.waste_type}</td>
                     <td className="py-3 px-2">
-                      <Select defaultValue={r.priority} onValueChange={(v) => updatePriority.mutate({ id: r.id, priority: v })}>
-                        <SelectTrigger className="w-24 h-7 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
+                      <Select defaultValue={r.priority} onValueChange={(v) => updateField(r.id, "priority", v)}>
+                        <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["Low", "Medium", "High", "Critical"].map((p) => (
-                            <SelectItem key={p} value={p}>{p}</SelectItem>
-                          ))}
+                          {["Low", "Medium", "High", "Critical"].map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
                         </SelectContent>
                       </Select>
                     </td>
                     <td className="py-3 px-2">
-                      <Select defaultValue={r.status} onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v })}>
-                        <SelectTrigger className="w-28 h-7 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
+                      <Select defaultValue={r.status} onValueChange={(v) => updateField(r.id, "status", v)}>
+                        <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["Pending", "Assigned", "In Progress", "Resolved"].map((s) => (
-                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                          ))}
+                          {["Pending", "Assigned", "In Progress", "Resolved"].map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
                         </SelectContent>
                       </Select>
                     </td>

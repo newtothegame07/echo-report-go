@@ -4,11 +4,7 @@ import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AdminLayout = () => {
-  const { isAuthenticated, role, loading } = useAuth();
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
-  }
+  const { isAuthenticated, role } = useAuth();
 
   if (!isAuthenticated || role !== "admin") {
     return <Navigate to="/login" replace />;
