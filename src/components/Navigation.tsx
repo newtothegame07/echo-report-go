@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Recycle, Menu, LogIn, LogOut } from "lucide-react";
+import { Leaf, Menu, LogIn, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,9 +26,9 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection("hero")}>
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <Recycle className="h-6 w-6 text-primary-foreground" />
+              <Leaf className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg">CleanCity</span>
+            <span className="font-bold text-lg">EcoClean</span>
           </div>
 
           <div className="hidden md:flex items-center gap-6">
@@ -36,6 +37,7 @@ const Navigation = () => {
             <button onClick={() => scrollToSection("schedule")} className="text-foreground hover:text-primary transition-colors">Schedule</button>
             <button onClick={() => scrollToSection("how-it-works")} className="text-foreground hover:text-primary transition-colors">How It Works</button>
             <Button size="sm" onClick={() => scrollToSection("report")}>Report Waste</Button>
+            <ThemeToggle />
             {!loading && (
               isAuthenticated ? (
                 <>
@@ -54,9 +56,12 @@ const Navigation = () => {
             )}
           </div>
 
-          <button className="md:hidden p-2 hover:bg-muted rounded-lg" onClick={() => setIsOpen(!isOpen)}>
-            <Menu className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <button className="p-2 hover:bg-muted rounded-lg" onClick={() => setIsOpen(!isOpen)}>
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {isOpen && (

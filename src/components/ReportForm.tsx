@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin } from "lucide-react";
+import { MapPin, Camera, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -16,32 +16,43 @@ const ReportForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wasteType, setWasteType] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Please upload an image under 5MB", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "Please login to submit a report",
-        variant: "destructive",
-      });
+      toast({ title: "Login Required", description: "Please login to submit a report", variant: "destructive" });
       navigate("/login");
       return;
     }
 
     setIsSubmitting(true);
-
-    // Mock submission
     const reportId = `WM-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
 
     setTimeout(() => {
-      toast({
-        title: "Report Submitted Successfully!",
-        description: `Your complaint ID is #${reportId}`,
-      });
+      toast({ title: "Report Submitted Successfully!", description: `Your complaint ID is #${reportId}` });
       (e.target as HTMLFormElement).reset();
       setWasteType("");
+      setPhotoPreview(null);
       setIsSubmitting(false);
     }, 800);
   };
@@ -59,9 +70,7 @@ const ReportForm = () => {
         <Card className="max-w-2xl mx-auto shadow-medium">
           <CardHeader>
             <CardTitle>Submit a Complaint</CardTitle>
-            <CardDescription>
-              Fill in the details below and we'll assign a team to your location
-            </CardDescription>
+            <CardDescription>Fill in the details below and we'll assign a team to your location</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -104,6 +113,40 @@ const ReportForm = () => {
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Photo Upload */}
+              <div className="space-y-2">
+                <Label>Photo Evidence (optional)</Label>
+                {photoPreview ? (
+                  <div className="relative w-full max-w-xs">
+                    <img src={photoPreview} alt="Preview" className="rounded-lg border border-border object-cover w-full h-48" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-7 w-7"
+                      onClick={removePhoto}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-8 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                  >
+                    <Camera className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Click to upload a photo (max 5MB)</span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
               </div>
 
               <div className="space-y-2">
