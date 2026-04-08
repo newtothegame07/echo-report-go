@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, BarChart3, Users, LogOut, Recycle } from "lucide-react";
+import { LayoutDashboard, FileText, BarChart3, Users, LogOut, Leaf } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -39,8 +39,8 @@ export function AdminSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-2">
-            <Recycle className="h-4 w-4 text-primary" />
-            {!collapsed && <span>CleanCity Admin</span>}
+            <Leaf className="h-4 w-4 text-primary" />
+            {!collapsed && <span>EcoClean Admin</span>}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
